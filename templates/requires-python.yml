@@ -1,0 +1,15 @@
+# Template file for installing python and dependencies
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+      addToPath: true
+      architecture: 'x64'
+  - task: CmdLine@2
+    displayName: Install Dependencies
+    inputs:
+      script: |
+        apt-get update && apt-get install -qqy git python3 python3-pip
+        pip3 install pipenv
+        pipenv sync --dev

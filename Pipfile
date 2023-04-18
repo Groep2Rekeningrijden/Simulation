@@ -1,0 +1,32 @@
+[dev-packages]
+pytest = "*"
+flake8-builtins-unleashed = "*"
+flake8-blind-except = "*"
+flake8-comprehensions = "*"
+flake8-docstrings = "*"
+flake8-import-order = "*"
+flake8-mock = "*"
+flake8-print = "*"
+flake8-pytest = "*"
+flake8-isort = "*"
+pep8-naming = "*"
+black = "*"
+isort = "*"
+yamllint = "*"
+pytest-cov = "*"
+coverage = "*"
+pylint = "*"
+pyenchant = "*"
+# Give flake8 plugins more time to catch up with the new major release.
+flake8 = "<5.0.0"
+
+[packages]
+networkx = "*"
+numpy = "*"
+osmnx = "*"
+pike = "*"
+shapely = "*"
+pika = "*"
+
+[requires]
+python_version = "3.11"

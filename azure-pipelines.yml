@@ -1,0 +1,105 @@
+trigger:
+  branches:
+    include:
+      - '*'
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
+  isDev: $[eq(variables['Build.SourceBranch'], 'refs/heads/dev')]
+
+stages:
+  - stage: test_isolated
+    jobs:
+      # --- Run linters on isolated environment ---
+      - job: linting
+        steps:
+          - template: templates/requires-python.yml
+
+          - task: CmdLine@2
+            displayName: Formatting (Black)
+            continueOnError: true
+            inputs:
+              script: |
+                pipenv shell
+                pipenv run black .
+
+          - task: CmdLine@2
+            displayName: PEP Enforcement (Flake8)
+            continueOnError: true
+            inputs:
+              script: |
+                pipenv shell
+                pipenv run flake8
+
+          - task: CmdLine@2
+            displayName: YAML Linting (yamllint)
+            continueOnError: true
+            inputs:
+              script: |
+                pipenv shell
+                pipenv run yamllint .
+
+          - task: CmdLine@2
+            displayName: Docstring Spelling (pylint)
+            continueOnError: true
+            inputs:
+              script: |
+                pipenv shell
+                pipenv run pylint --disable all --enable spelling --recursive=y ./
+
+          - task: CmdLine@2
+            displayName: Fail if linters fail
+            inputs:
+              script: |
+                echo AGENT_JOBSTATUS = $AGENT_JOBSTATUS
+                if [[ "$AGENT_JOBSTATUS" == "SucceededWithIssues" ]]; then exit 1; fi
+
+      # --- Run unit tests on isolated instance ---
+      - job: unit_test
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - template: templates/requires-python.yml
+
+          - task: SonarCloudPrepare@1
+            inputs:
+              SonarCloud: 'SonarCloud'
+              organization: 'fontys-sb-01'
+              scannerMode: 'CLI'
+              configMode: 'manual'
+              cliProjectKey: 'SB-01_TrackerService'
+              cliProjectName: 'TrackerService'
+              cliSources: '.'
+
+          - task: CmdLine@2
+            displayName: Run pytest
+            inputs:
+              script: |
+                pipenv shell
+                pipenv run pytest -v  --cov --cov-report=xml --cov-report=html
+
+          - task: SonarCloudAnalyze@1
+
+          - task: SonarCloudPublish@1
+            inputs:
+              pollingTimeoutSec: '300'
+
+  # --- Run tests on dev environment ---
+  - stage: test_dev
+    dependsOn: test_isolated
+    condition: succeeded()
+    jobs:
+      - job: B1
+      - job: B2
+
+  # --- Deploy to prod ---
+  - stage: prod
+    dependsOn: test_dev
+    condition: and(succeeded(), eq(variables.isMain, 'true'))
+    jobs:
+      - job: C1
+      - job: C2

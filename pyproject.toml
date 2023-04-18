@@ -1,0 +1,14 @@
+[tool.isort]
+# See https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
+profile = "black"
+
+[tool.pytest.ini_options]
+markers = [
+    # General tests
+    "automatic",
+    "base",
+]
+#filterwarnings = [
+#  "error",
+#  "ignore::DeprecationWarning",
+#]

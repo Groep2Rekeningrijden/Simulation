@@ -1,0 +1,27 @@
+[flake8]
+# From https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
+max-line-length = 88
+extend-ignore = E203
+￼￼
+doctests = True
+docstring-convention = numpy
+import-order-style = smarkets
+application-import-names = pro6pp, tests, tools
+max-complexity = 72
+
+exclude = .git,
+          __pycache__,
+          bin,
+          include,
+          lib
+
+# D200 - One-line docstring should fit on one line with quotes
+# D204 - 1 blank line required after class docstring
+# S101 - Use of assert detected
+# W503 - line break before binary operator
+# E501 - line too long
+ignore = D200,D204,S101,W503,E501
+
+# W605 - Invalid regex escape character. Ignored because Pandas still uses them.
+per-file-ignores =
+    ./pro6pp/insertion_scripts/shared/pandas/tests/test_derivative_helpers.py:W605
