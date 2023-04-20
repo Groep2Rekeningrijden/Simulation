@@ -47,11 +47,6 @@ def run(region: str, count: int, sample_frequency: int):
         pickle.dump(generated_routes, file)
 
     # TODO: Push pickles to storage so they can be loaded by generator
-    # Loop:
-    #   Generate two points
-    #   Generate route between points
-    #   Split route into coordinate list
-    #   Store list
 
 
 def convert_to_coordinates(gdf_edges):
