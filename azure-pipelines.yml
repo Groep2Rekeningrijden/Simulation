@@ -17,7 +17,6 @@ stages:
       - job: linting
         steps:
           - template: templates/requires-python.yml
-
           - task: CmdLine@2
             displayName: Formatting (Black)
             continueOnError: true

@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "tracker-consumer"
+version = "0.1.0"
+description = ""
+authors = ["David Hellinga <d.hellinga@student.fontys.nl>"]
+readme = "README.md"
+packages = [{include = "tracker_consumer"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+# See https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html
+profile = "black"
+
+[tool.pytest.ini_options]
+markers = [
+    "unit",
+    "contract",
+    "e2e",
+]
