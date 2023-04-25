@@ -8,8 +8,8 @@ packages = [{include = "tracker_runner"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pika = "^1.3.1"
 numpy = "^1.24.2"
+google-cloud-storage = "^2.8.0"
 
 [tool.poetry.group.dev.dependencies]
 pyenchant = "^3.2.2"

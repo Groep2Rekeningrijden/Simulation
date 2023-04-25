@@ -2,6 +2,7 @@
 Contains the route generator for RWK simulated trackers.
 """
 import argparse
+import logging
 import os
 import pickle
 import uuid
@@ -10,6 +11,7 @@ import networkx
 import numpy
 import osmnx
 from geopandas import GeoDataFrame
+from google.cloud import storage
 from networkx import MultiDiGraph
 from osmnx import projection, settings, utils_geo
 from shapely import LineString
@@ -40,13 +42,48 @@ def run(region: str, count: int, sample_frequency: int):
 
         generated_routes.append(coordinates)
 
+    write_to_pickle(generated_routes)
+
+    # TODO: Push pickles to storage so they can be loaded by generator
+    # Loop:
+    #   Generate two points
+    #   Generate route between points
+    #   Split route into coordinate list
+    #   Store list
+
+
+def store_pickles_on_cloud():
+    # Iterate over files in the out directory
+    # TODO: Authentication
+    storage_client = storage.Client()
+    bucket_name = os.getenv('GC_BUCKET_NAME')
+    for filename in os.listdir("out"):
+        path = os.path.join("out", filename)
+        # checking if it is a file
+        if os.path.isfile(path):
+            upload_blob(storage_client, bucket_name, filename, path)
+
+
+def upload_blob(storage_client, bucket_name, source_file_name, path):
+    """Uploads a file to the bucket."""
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(source_file_name)
+
+    if blob.upload_from_filename(path):
+        logging.info(f"File {source_file_name} uploaded to {blob}")
+
+
+def write_to_pickle(generated_routes):
+    """
+    Write the generated routes to a pickle file.
+
+    :param generated_routes: List of generated routes.
+    """
     if not os.path.exists("out"):
         os.makedirs("out")
     identifier = str(uuid.uuid4())
     with open(f"out/routes-{identifier}.pickle", mode="wb") as file:
         pickle.dump(generated_routes, file)
-
-    # TODO: Push pickles to storage so they can be loaded by generator
 
 
 def convert_to_coordinates(gdf_edges):
@@ -147,7 +184,7 @@ if __name__ == "__main__":
         "region",
         type=str,
         help="The region in which the routes should be generated, in the OSM name format."
-             "Example: 'Eindhoven, Noord-Brabant, Netherlands'"
+             "Example: 'Eindhoven, Noord-Brabant, Netherlands' "
              "Browse https://www.openstreetmap.org/relation/2323309 for options within the Netherlands.",
     )
     parser.add_argument(
@@ -161,6 +198,8 @@ if __name__ == "__main__":
         help="The time between tracker samples. Used to determine points on longer roads.",
         default=1,
     )
+
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO)
 
     run(args.region, args.count, args.sample_frequency)

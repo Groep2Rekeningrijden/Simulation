@@ -134,3 +134,5 @@ dmypy.json
 tracker_generator/tracker_generator/cache/
 tracker_runner/tracker_runner/routes/
 tracker_runner/tracker_runner/source/
+
+gcloud_key*
