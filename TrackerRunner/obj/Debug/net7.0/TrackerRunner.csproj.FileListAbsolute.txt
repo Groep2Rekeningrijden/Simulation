@@ -1,0 +1,15 @@
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/bin/Debug/net7.0/TrackerRunner
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/bin/Debug/net7.0/TrackerRunner.deps.json
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/bin/Debug/net7.0/TrackerRunner.runtimeconfig.json
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/bin/Debug/net7.0/TrackerRunner.dll
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/bin/Debug/net7.0/TrackerRunner.pdb
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.csproj.AssemblyReference.cache
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.GeneratedMSBuildEditorConfig.editorconfig
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.AssemblyInfoInputs.cache
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.AssemblyInfo.cs
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.csproj.CoreCompileInputs.cache
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.dll
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/refint/TrackerRunner.dll
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.pdb
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/TrackerRunner.genruntimeconfig.cache
+/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/obj/Debug/net7.0/ref/TrackerRunner.dll
