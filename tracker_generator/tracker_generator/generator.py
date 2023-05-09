@@ -20,7 +20,7 @@ from shapely import LineString
 from shapely.geometry import mapping
 
 
-def run(region: str, count: int, interval: int):
+def run(region: str, count: int, interval: int, debug: bool):
     """
     Generate <count> routes for the given <region> and store to pickle files.
     """
@@ -35,15 +35,14 @@ def run(region: str, count: int, interval: int):
             shortest_route = generate_new_route(osmnx_map)
             identifier = str(uuid.uuid4())
 
-            save_route_to_folium(osmnx_map, shortest_route, identifier)
+            if debug:
+                save_route_to_folium(osmnx_map, shortest_route, f"{identifier}-before-splitting")
 
             gdf_nodes, gdf_edges = split_route_edges(osmnx_map, shortest_route, interval)
 
-            # For the RWK route pricing:
-            # Edge attributes for the route contain street name, type and distance, excellent for applying prices
-            # route_edge_attributes = utils_graph.get_route_edge_attributes(graph,shortest_route)
-            out = utils_graph.graph_from_gdfs(gdf_nodes, gdf_edges, None)
-            save_graph_to_folium(out, f"{identifier}-out")
+            if debug:
+                out = utils_graph.graph_from_gdfs(gdf_nodes, gdf_edges, None)
+                save_graph_to_folium(out, f"{identifier}-after-splitting")
 
             route = convert_to_coordinates(gdf_edges)
         except networkx.NetworkXNoPath:
@@ -138,52 +137,18 @@ def split_route_edges(
     :return gdf_edges: GeoDataFrame containing the edges we want to convert.
     """
     # Generate a dataframe containing the route geodata
-    # TODO: order of edges is wrong
-    sg = osmnx_map.subgraph(route)
-    fig = matplotlib.pyplot.figure(linewidth=1)
-    networkx.draw(sg, ax=fig.add_subplot())
-    fig.savefig("../out/graph.png")
-
-    gdf_nodes, gdf_edges = osmnx.graph_to_gdfs(sg)
-    # TODO: The issue is that the subgraph isn't sorted for the route. We get indexes in edges
-    #   with node_x/node_y/z structure. If we split indexes we can loop through and find the
-    #   correct edge based on node_x_1 == node_y_2 or the other way around
-    gdf_edges = gdf_edges.drop_duplicates(subset="osmid")
+    gdf_nodes, gdf_edges = osmnx.graph_to_gdfs(osmnx_map.subgraph(route))
     gdf_edges = gdf_edges.reset_index()
-    # Take the first edge and assign sort value 0.
-    # Find the edge that has u1==v2, assign it -1, repeat with constantly lowering value until none are found.
-    # Then, starting from the first edge, find v1==u2, assign +1, repeat with constantly increasing value until none are found
-    gdf_edges["sort"] = 0
-    index = 0
-    lower_found = True
-    search_for_lower = True
-    higher_found = True
-    search_for_higher = True
-    lower = -1
-    higher = 1
-    while lower_found or higher_found:
-        if not lower_found:
-            search_for_lower = False
-        lower_found = False
-        if not higher_found:
-            search_for_higher = False
-        higher_found = False
-        u = gdf_edges.iloc[index]["u"]
-        v = gdf_edges.iloc[index]["v"]
-        for index, row in gdf_edges.iterrows():
-            if search_for_lower:
-                if row["v"] == u:
-                    gdf_edges.iloc[index, "sort"] = lower
-                    lower -= 1
-                    u = row["v"]
-                    lower_found = True
-            if search_for_higher:
-                if row["u"] == v:
-                    gdf_edges.iloc[index, "sort"] = higher
-                    higher += 1
-                    v = row["u"]
-                    higher_found = True
-    gdf_edges = gdf_edges.sort_values(by=["sort"]).set_index(["u", "v", "key"])
+
+    # We use the nodes in routes to find the next node in the route, and sort the edges based on this.
+    # Then we can remove the rows that aren't part of the route.
+    previous_node = None
+    for index, node in enumerate(route):
+        # Find next node and filter out backwards routes
+        gdf_edges.loc[(gdf_edges["u"] == node) & ~(gdf_edges["v"] == previous_node), "order"] = index
+        previous_node = node
+    gdf_edges = gdf_edges.loc[~gdf_edges["order"].isnull()].sort_values(by=["order"])
+    gdf_edges = gdf_edges.drop(columns=["order"]).set_index(["u", "v", "key"])
 
     # Split the road_segments based on maximum speed on that edge
     for index, road_segment in gdf_edges.iterrows():
@@ -274,8 +239,13 @@ if __name__ == "__main__":
         type=int,
         help="The time between tracker samples. Used to determine points on longer roads.",
     )
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='Generate debug html graphs'
+    )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    run(args.region, args.count, args.interval)
+    run(args.region, args.count, args.interval, args.debug)
