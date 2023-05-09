@@ -6,14 +6,16 @@ import json
 import logging
 import os
 import uuid
+from typing import Tuple
 
+import matplotlib
 import networkx
 import numpy
 import osmnx
 from geopandas import GeoDataFrame
 from google.cloud import storage
 from networkx import MultiDiGraph
-from osmnx import projection, settings, utils_geo
+from osmnx import projection, settings, utils_geo, utils_graph
 from shapely import LineString
 from shapely.geometry import mapping
 
@@ -31,20 +33,25 @@ def run(region: str, count: int, interval: int):
     while generated_routes < count:
         try:
             shortest_route = generate_new_route(osmnx_map)
+            identifier = str(uuid.uuid4())
 
-            gdf_edges = split_route_edges(osmnx_map, shortest_route, interval)
+            save_route_to_folium(osmnx_map, shortest_route, identifier)
+
+            gdf_nodes, gdf_edges = split_route_edges(osmnx_map, shortest_route, interval)
 
             # For the RWK route pricing:
             # Edge attributes for the route contain street name, type and distance, excellent for applying prices
             # route_edge_attributes = utils_graph.get_route_edge_attributes(graph,shortest_route)
+            out = utils_graph.graph_from_gdfs(gdf_nodes, gdf_edges, None)
+            save_graph_to_folium(out, f"{identifier}-out")
 
             route = convert_to_coordinates(gdf_edges)
         except networkx.NetworkXNoPath:
             continue
         try:
-            write_to_file(route)
+            write_to_file(route, identifier)
         except IOError as e:
-            continue
+            logging.error(e)
 
         generated_routes += 1
 
@@ -54,6 +61,18 @@ def run(region: str, count: int, interval: int):
     #   Generate route between points
     #   Split route into coordinate list
     #   Store list
+
+
+def save_route_to_folium(osmnx_map, shortest_route, identifier):
+    shortest_route_map = osmnx.plot_route_folium(
+        osmnx.projection.project_graph(osmnx_map, to_crs="EPSG:4326"), shortest_route, tiles="openstreetmap"
+    )
+    shortest_route_map.save(outfile=f"../out/{identifier}.html")
+
+
+def save_graph_to_folium(graph, identifier):
+    folium_map = osmnx.plot_graph_folium(graph, tiles="openstreetmap")
+    folium_map.save(outfile=f"../out/{identifier}.html")
 
 
 def store_files_on_cloud():
@@ -77,16 +96,16 @@ def upload_blob(storage_client, bucket_name, source_file_name, path):
         logging.info(f"File {source_file_name} uploaded to {blob}")
 
 
-def write_to_file(route):
+def write_to_file(route, identifier):
     """
     Write the generated routes to a JSON file.
 
     :param route: List of coordinates.
+    :param identifier: Identifier for the route.
     """
-    identifier = str(uuid.uuid4())
 
     # Convert route to json and write to "<identifier>.json" in the out directory
-    with open(f"out/{identifier}.json", mode="w") as file:
+    with open(f"../out/{identifier}.json", mode="w") as file:
         file.write(json.dumps(route))
 
 
@@ -109,7 +128,7 @@ def convert_to_coordinates(gdf_edges):
 
 def split_route_edges(
         osmnx_map: MultiDiGraph, route: list, interval: int
-) -> GeoDataFrame:
+) -> tuple[GeoDataFrame, GeoDataFrame]:
     """
     Generate a GeoDataFrame containing the edges of the given route with points on each edge based on the frequency.
 
@@ -119,19 +138,71 @@ def split_route_edges(
     :return gdf_edges: GeoDataFrame containing the edges we want to convert.
     """
     # Generate a dataframe containing the route geodata
-    gdf_nodes, gdf_edges = osmnx.graph_to_gdfs(osmnx_map.subgraph(route))
+    # TODO: order of edges is wrong
+    sg = osmnx_map.subgraph(route)
+    fig = matplotlib.pyplot.figure(linewidth=1)
+    networkx.draw(sg, ax=fig.add_subplot())
+    fig.savefig("../out/graph.png")
+
+    gdf_nodes, gdf_edges = osmnx.graph_to_gdfs(sg)
+    # TODO: The issue is that the subgraph isn't sorted for the route. We get indexes in edges
+    #   with node_x/node_y/z structure. If we split indexes we can loop through and find the
+    #   correct edge based on node_x_1 == node_y_2 or the other way around
+    gdf_edges = gdf_edges.drop_duplicates(subset="osmid")
+    gdf_edges = gdf_edges.reset_index()
+    # Take the first edge and assign sort value 0.
+    # Find the edge that has u1==v2, assign it -1, repeat with constantly lowering value until none are found.
+    # Then, starting from the first edge, find v1==u2, assign +1, repeat with constantly increasing value until none are found
+    gdf_edges["sort"] = 0
+    index = 0
+    lower_found = True
+    search_for_lower = True
+    higher_found = True
+    search_for_higher = True
+    lower = -1
+    higher = 1
+    while lower_found or higher_found:
+        if not lower_found:
+            search_for_lower = False
+        lower_found = False
+        if not higher_found:
+            search_for_higher = False
+        higher_found = False
+        u = gdf_edges.iloc[index]["u"]
+        v = gdf_edges.iloc[index]["v"]
+        for index, row in gdf_edges.iterrows():
+            if search_for_lower:
+                if row["v"] == u:
+                    gdf_edges.iloc[index, "sort"] = lower
+                    lower -= 1
+                    u = row["v"]
+                    lower_found = True
+            if search_for_higher:
+                if row["u"] == v:
+                    gdf_edges.iloc[index, "sort"] = higher
+                    higher += 1
+                    v = row["u"]
+                    higher_found = True
+    gdf_edges = gdf_edges.sort_values(by=["sort"]).set_index(["u", "v", "key"])
+
     # Split the road_segments based on maximum speed on that edge
     for index, road_segment in gdf_edges.iterrows():
         seg_count = road_segment["travel_time"] / interval
-        if seg_count <= 0:
+        if seg_count <= 1:
             continue
         points = utils_geo.interpolate_points(
             road_segment["geometry"], road_segment["speed_kph"] / 3.6 * interval
         )
-        road_segment["geometry"] = LineString(list(points))
+        if road_segment["reversed"]:
+            road_segment["geometry"] = LineString(list(points)[::-1])
+        else:
+            road_segment["geometry"] = LineString(list(points))
+
     # Convert UTM/CRS back to lat/lng
+    gdf_nodes = projection.project_gdf(gdf_nodes, to_latlong=True)
     gdf_edges = projection.project_gdf(gdf_edges, to_latlong=True)
-    return gdf_edges
+
+    return gdf_nodes, gdf_edges
 
 
 def generate_new_route(osmnx_map: MultiDiGraph) -> list:
@@ -151,6 +222,7 @@ def generate_new_route(osmnx_map: MultiDiGraph) -> list:
     shortest_route = networkx.shortest_path(
         osmnx_map, start_node, end_node, weight="travel_time"
     )
+
     return shortest_route
 
 
@@ -175,6 +247,7 @@ def init_osmnx(region: str) -> MultiDiGraph:
     osmnx_map = osmnx.projection.project_graph(osmnx_map)
     osmnx_map = osmnx.add_edge_speeds(osmnx_map)
     osmnx_map = osmnx.add_edge_travel_times(osmnx_map)
+
     return osmnx_map
 
 

@@ -12,6 +12,7 @@ osmnx = "^1.3.0"
 scipy = "^1.10.1"
 networkx = "^3.0"
 google-cloud-storage = "^2.8.0"
+folium = "^0.14.0"
 
 [tool.poetry.group.dev.dependencies]
 pyenchant = "^3.2.2"
