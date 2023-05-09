@@ -2,9 +2,9 @@
 Contains the route generator for RWK simulated trackers.
 """
 import argparse
+import json
 import logging
 import os
-import pickle
 import uuid
 
 import networkx
@@ -18,31 +18,35 @@ from shapely import LineString
 from shapely.geometry import mapping
 
 
-def run(region: str, count: int, sample_frequency: int):
+def run(region: str, count: int, interval: int):
     """
     Generate <count> routes for the given <region> and store to pickle files.
     """
     # Set up OSMNX with region map
     osmnx_map = init_osmnx(region)
+    if not os.path.exists("out"):
+        os.makedirs("out")
 
-    generated_routes = []
-    while len(generated_routes) < count:
+    generated_routes = 0
+    while generated_routes < count:
         try:
             shortest_route = generate_new_route(osmnx_map)
 
-            gdf_edges = split_route_edges(osmnx_map, shortest_route, sample_frequency)
+            gdf_edges = split_route_edges(osmnx_map, shortest_route, interval)
 
             # For the RWK route pricing:
             # Edge attributes for the route contain street name, type and distance, excellent for applying prices
             # route_edge_attributes = utils_graph.get_route_edge_attributes(graph,shortest_route)
 
-            coordinates = convert_to_coordinates(gdf_edges)
+            route = convert_to_coordinates(gdf_edges)
         except networkx.NetworkXNoPath:
             continue
+        try:
+            write_to_file(route)
+        except IOError as e:
+            continue
 
-        generated_routes.append(coordinates)
-
-    write_to_pickle(generated_routes)
+        generated_routes += 1
 
     # TODO: Push pickles to storage so they can be loaded by generator
     # Loop:
@@ -52,7 +56,7 @@ def run(region: str, count: int, sample_frequency: int):
     #   Store list
 
 
-def store_pickles_on_cloud():
+def store_files_on_cloud():
     # Iterate over files in the out directory
     # TODO: Authentication
     storage_client = storage.Client()
@@ -73,17 +77,17 @@ def upload_blob(storage_client, bucket_name, source_file_name, path):
         logging.info(f"File {source_file_name} uploaded to {blob}")
 
 
-def write_to_pickle(generated_routes):
+def write_to_file(route):
     """
-    Write the generated routes to a pickle file.
+    Write the generated routes to a JSON file.
 
-    :param generated_routes: List of generated routes.
+    :param route: List of coordinates.
     """
-    if not os.path.exists("out"):
-        os.makedirs("out")
     identifier = str(uuid.uuid4())
-    with open(f"out/routes-{identifier}.pickle", mode="wb") as file:
-        pickle.dump(generated_routes, file)
+
+    # Convert route to json and write to "<identifier>.json" in the out directory
+    with open(f"out/{identifier}.json", mode="w") as file:
+        file.write(json.dumps(route))
 
 
 def convert_to_coordinates(gdf_edges):
@@ -104,25 +108,25 @@ def convert_to_coordinates(gdf_edges):
 
 
 def split_route_edges(
-        osmnx_map: MultiDiGraph, route: list, sample_frequency: int
+        osmnx_map: MultiDiGraph, route: list, interval: int
 ) -> GeoDataFrame:
     """
     Generate a GeoDataFrame containing the edges of the given route with points on each edge based on the frequency.
 
     :param osmnx_map: OSMNX map containing the full route.
     :param route: The route to process.
-    :param sample_frequency: The time between samples. Used with road speed to generate coordinates.
+    :param interval: The time between samples. Used with road speed to generate coordinates.
     :return gdf_edges: GeoDataFrame containing the edges we want to convert.
     """
     # Generate a dataframe containing the route geodata
     gdf_nodes, gdf_edges = osmnx.graph_to_gdfs(osmnx_map.subgraph(route))
     # Split the road_segments based on maximum speed on that edge
     for index, road_segment in gdf_edges.iterrows():
-        seg_count = road_segment["travel_time"] / sample_frequency
+        seg_count = road_segment["travel_time"] / interval
         if seg_count <= 0:
             continue
         points = utils_geo.interpolate_points(
-            road_segment["geometry"], road_segment["speed_kph"] / 3.6 * sample_frequency
+            road_segment["geometry"], road_segment["speed_kph"] / 3.6 * interval
         )
         road_segment["geometry"] = LineString(list(points))
     # Convert UTM/CRS back to lat/lng
@@ -193,13 +197,12 @@ if __name__ == "__main__":
         help="Number of routes to generate.",
     )
     parser.add_argument(
-        "--sample_frequency",
+        "interval",
         type=int,
         help="The time between tracker samples. Used to determine points on longer roads.",
-        default=1,
     )
 
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    run(args.region, args.count, args.sample_frequency)
+    run(args.region, args.count, args.interval)
