@@ -138,3 +138,5 @@ tracker_runner/tracker_runner/source/
 gcloud_key*
 
 *.idea/
+bin/
+obj/

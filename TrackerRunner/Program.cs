@@ -69,10 +69,7 @@ namespace TrackerRunner
                 var file = files[Rnd.Next(files.Count)];
                 var task = Task.Run(async () =>
                 {
-                    while (true)
-                    {
-                        await RunBatch(_batchSize, httpClient, _interval, file);
-                    }
+                    await RunBatch(_batchSize, httpClient, _interval, file);
                 });
 
                 tasks.Add(task);

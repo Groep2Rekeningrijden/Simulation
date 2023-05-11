@@ -200,7 +200,6 @@ def init_osmnx(region: str) -> MultiDiGraph:
     """
     # Configure osmnx, area and routing settings
     # For settings see https://osmnx.readthedocs.io/en/stable/osmnx.html?highlight=settings#module-osmnx.settings
-    osmnx.config(log_console=True, use_cache=True)
     settings.log_console = True
     settings.use_cache = True
 
