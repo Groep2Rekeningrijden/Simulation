@@ -6,9 +6,7 @@ import json
 import logging
 import os
 import uuid
-from typing import Tuple
 
-import matplotlib
 import networkx
 import numpy
 import osmnx
@@ -66,12 +64,12 @@ def save_route_to_folium(osmnx_map, shortest_route, identifier):
     shortest_route_map = osmnx.plot_route_folium(
         osmnx.projection.project_graph(osmnx_map, to_crs="EPSG:4326"), shortest_route, tiles="openstreetmap"
     )
-    shortest_route_map.save(outfile=f"../out/{identifier}.html")
+    shortest_route_map.save(outfile=f"{os.getcwd()}/out/{identifier}.html")
 
 
 def save_graph_to_folium(graph, identifier):
     folium_map = osmnx.plot_graph_folium(graph, tiles="openstreetmap")
-    folium_map.save(outfile=f"../out/{identifier}.html")
+    folium_map.save(outfile=f"{os.getcwd()}/out/{identifier}.html")
 
 
 def store_files_on_cloud():
@@ -104,7 +102,7 @@ def write_to_file(route, identifier):
     """
 
     # Convert route to json and write to "<identifier>.json" in the out directory
-    with open(f"../out/{identifier}.json", mode="w") as file:
+    with open(f"{os.getcwd()}/out/{identifier}.json", mode="w") as file:
         file.write(json.dumps(route))
 
 
