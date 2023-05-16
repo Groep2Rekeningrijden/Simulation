@@ -51,8 +51,12 @@ namespace TrackerRunner
 
         private static string[] GetFiles()
         {
-            var files = Directory.GetFiles(@"/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/Routes",
+            //voor nick
+            var files = Directory.GetFiles(@"C:\Users\Nickv\Documents\School\Semester 6\sem 6 group\Simulation\TrackerRunner\Routes",
                 "*.json");
+
+            //var files = Directory.GetFiles(@"/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/Routes",
+            //    "*.json");
 
             if (files.Length == 0)
             {
