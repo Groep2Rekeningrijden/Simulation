@@ -1,0 +1,6 @@
+﻿services:
+  trackerrunner:
+    image: trackerrunner
+    build:
+      context: .
+      dockerfile: Dockerfile
