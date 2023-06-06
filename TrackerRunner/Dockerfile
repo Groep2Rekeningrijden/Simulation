@@ -15,5 +15,5 @@ RUN dotnet publish "TrackerRunner.csproj" -c Release -o /app/publish /p:UseAppHo
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY ./Routes/ ./Routes/
+COPY Routes/ /Routes
 ENTRYPOINT ["dotnet", "TrackerRunner.dll"]

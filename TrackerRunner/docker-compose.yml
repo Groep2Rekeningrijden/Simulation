@@ -1,6 +1,20 @@
 ﻿services:
-  trackerrunner:
-    image: trackerrunner
+  tracker-runner:
+    image: fontyssa/tracker-runner-brussels
     build:
       context: .
       dockerfile: Dockerfile
+    networks:
+      - docker_rekeningrijden
+    environment:
+      - COUNT=1
+      - INTERVAL=3
+      - BATCH_SIZE=5
+      - TIME_FACTOR=100
+      - STATUS_INTERVAL=120
+      - TARGET_URL=http://router-api/
+#      - TARGET_URL="https://router.kind.cluster/"
+
+networks:
+  docker_rekeningrijden:
+    external: true

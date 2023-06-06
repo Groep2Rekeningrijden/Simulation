@@ -8,5 +8,5 @@ dotnet run TrackerRunner.csproj 1 3 5 10 https://router.kind.cluster/
 
 ```shell
 cd bin/Debug/net7.0/
-dotnet TrackerRunner.dll 1 3 5 10 https://router.kind.cluster/
+dotnet TrackerRunner.dll 1 3 5 10 
 ```
