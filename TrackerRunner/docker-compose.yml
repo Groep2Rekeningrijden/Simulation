@@ -13,6 +13,7 @@
       - TIME_FACTOR=100
       - STATUS_INTERVAL=120
       - TARGET_URL=http://router-api/
+      - CAR_URL=http://car-service/
 #      - TARGET_URL="https://router.kind.cluster/"
 
 networks:

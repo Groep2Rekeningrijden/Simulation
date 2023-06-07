@@ -1,12 +1,14 @@
 ﻿using System.Text;
-using System.Text.Json;
+using Newtonsoft.Json;
 using TrackerRunner.DTOs;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace TrackerRunner;
 
 class Program
 {
     private static string _targetUrl = "";
+    private static string _carUrl = "";
     private static int _interval;
     private static int _batchSize;
     private static int _count;
@@ -44,6 +46,8 @@ class Program
                                               "ENV variable STATUS_INTERVAL is not defined"));
         _targetUrl = Environment.GetEnvironmentVariable("TARGET_URL") ??
                      throw new ArgumentException("ENV variable TARGET_URL is not defined");
+        _carUrl = Environment.GetEnvironmentVariable("CAR_URL") ??
+                  throw new ArgumentException("ENV variable CAR_URL is not defined");
 
         if (_count <= 0 || _interval <= 0 || _batchSize <= 0 || _timeFactor <= 0 || _statusInterval <= 0)
         {
@@ -54,13 +58,6 @@ class Program
 
     private static string[] GetFiles()
     {
-        //voor nick
-        // var files = Directory.GetFiles(@"C:\Users\Nickv\Documents\School\Semester 6\sem 6 group\Simulation\TrackerRunner\Routes",
-        //     "*.json");
-
-        // var files = Directory.GetFiles(@"/home/luna/Documents/rekeningrijden/Simulation/TrackerRunner/Routes",
-        //     "*.json");
-
         var files = Directory.GetFiles("/Routes");
 
         if (files.Length == 0)
@@ -91,7 +88,7 @@ class Program
 
     private static async Task RunBatch(int batchSize, HttpClient httpClient, int interval, string file)
     {
-        var id = Guid.NewGuid().ToString();
+        var id = await GetRandomVehicle(httpClient);
         var coordinates = ReadCoordinatesFromFile(file);
 
         var result = new List<CoordinatesDto>();
@@ -121,6 +118,12 @@ class Program
         }
 
         await SendStatusAsync(httpClient, new StatusDto(id, 1));
+    }
+
+    private static async Task<string> GetRandomVehicle(HttpClient httpClient)
+    {
+        var response = await httpClient.GetStringAsync($"{_carUrl}random");
+        return JsonConvert.DeserializeObject<VehicleDTO>(response)!.Id;
     }
 
     private static async Task SendCoordinatesAsync(HttpClient httpClient, RawInputDto batch)
