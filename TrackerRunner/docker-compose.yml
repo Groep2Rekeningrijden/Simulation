@@ -7,7 +7,7 @@
     networks:
       - docker_rekeningrijden
     environment:
-      - COUNT=1
+      - COUNT=100
       - INTERVAL=3
       - BATCH_SIZE=5
       - TIME_FACTOR=100
