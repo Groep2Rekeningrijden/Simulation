@@ -16,4 +16,5 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 COPY Routes/ /Routes
+COPY pregen/ /pregen
 ENTRYPOINT ["dotnet", "TrackerRunner.dll"]

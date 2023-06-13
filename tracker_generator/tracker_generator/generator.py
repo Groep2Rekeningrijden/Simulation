@@ -11,19 +11,18 @@ import networkx
 import numpy
 import osmnx
 from geopandas import GeoDataFrame
-from google.cloud import storage
 from networkx import MultiDiGraph
 from osmnx import projection, settings, utils_geo, utils_graph
 from shapely import LineString
 from shapely.geometry import mapping
 
 
-def run(region: str, count: int, interval: int, debug: bool):
+def run(type: str, region: str, count: int, interval: int, debug: bool):
     """
     Generate <count> routes for the given <region> and store to pickle files.
     """
     # Set up OSMNX with region map
-    osmnx_map = init_osmnx(region)
+    osmnx_map = init_osmnx(type, region)
     if not os.path.exists("out"):
         os.makedirs("out")
 
@@ -70,27 +69,6 @@ def save_route_to_folium(osmnx_map, shortest_route, identifier):
 def save_graph_to_folium(graph, identifier):
     folium_map = osmnx.plot_graph_folium(graph, tiles="openstreetmap")
     folium_map.save(outfile=f"{os.getcwd()}/out/{identifier}.html")
-
-
-def store_files_on_cloud():
-    # Iterate over files in the out directory
-    # TODO: Authentication
-    storage_client = storage.Client()
-    bucket_name = os.getenv('GC_BUCKET_NAME')
-    for filename in os.listdir("out"):
-        path = os.path.join("out", filename)
-        # checking if it is a file
-        if os.path.isfile(path):
-            upload_blob(storage_client, bucket_name, filename, path)
-
-
-def upload_blob(storage_client, bucket_name, source_file_name, path):
-    """Uploads a file to the bucket."""
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(source_file_name)
-
-    if blob.upload_from_filename(path):
-        logging.info(f"File {source_file_name} uploaded to {blob}")
 
 
 def write_to_file(route, identifier):
@@ -189,10 +167,11 @@ def generate_new_route(osmnx_map: MultiDiGraph) -> list:
     return shortest_route
 
 
-def init_osmnx(region: str) -> MultiDiGraph:
+def init_osmnx(region_type: str, region: str) -> MultiDiGraph:
     """
     Initialize OSMNX with configuration.
 
+    :param region_type:
     :param region: The region for which to generate a map
     :return osmnx_map: The OSMNX map of the given region as a networkx multidimensional graph
     """
@@ -205,7 +184,25 @@ def init_osmnx(region: str) -> MultiDiGraph:
     mode = "drive"  # 'drive', 'bike', 'walk'
     # create graph from OSM within the boundaries of some
     # geocodable place(s)
-    osmnx_map = osmnx.graph_from_place(region, network_type=mode)
+
+    match region_type:
+        case "PLACE":
+            # create graph from OSM within the boundaries of some
+            # geocodable place(s)
+            osmnx_map = osmnx.graph_from_place(region, network_type=mode)
+        case "BBOX":
+            # create graph from OSM within a bounding box
+            region = json.loads(region)
+            osmnx_map = osmnx.graph_from_bbox(
+                north=region["north"],
+                south=region["south"],
+                east=region["east"],
+                west=region["west"],
+                network_type=mode,
+            )
+        case _:
+            raise ValueError("Invalid region type or no region type")
+
     osmnx_map = osmnx.projection.project_graph(osmnx_map)
     osmnx_map = osmnx.add_edge_speeds(osmnx_map)
     osmnx_map = osmnx.add_edge_travel_times(osmnx_map)
@@ -222,9 +219,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "region",
         type=str,
-        help="The region in which the routes should be generated, in the OSM name format."
-             "Example: 'Eindhoven, Noord-Brabant, Netherlands' "
-             "Browse https://www.openstreetmap.org/relation/2323309 for options within the Netherlands.",
+        help="The region in which the routes should be generated."
+             "Place example: 'Eindhoven, Noord-Brabant, Netherlands' "
+             'Bbox example: {"south": 51.075920, "west": 3.180542, "north": 51.522416, "east": 5.907898}'
+             "Browse https://www.openstreetmap.org/relation/2323309 for options within the Netherlands."
+             "Go to https://bboxfinder.com/ to find the bounding box of a place",
     )
     parser.add_argument(
         "count",
@@ -237,6 +236,14 @@ if __name__ == "__main__":
         help="The time between tracker samples. Used to determine points on longer roads.",
     )
     parser.add_argument(
+        "--type",
+        default='PLACE',
+        const='PLACE',
+        nargs='?',
+        choices=['PLACE', 'BBOX'],
+        help='use place or bbox input (default: %(default)s)'
+    )
+    parser.add_argument(
         '--debug',
         action='store_true',
         help='Generate debug html graphs'
@@ -245,4 +252,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
 
-    run(args.region, args.count, args.interval, args.debug)
+    run(args.type, args.region, args.count, args.interval, args.debug)

@@ -1,20 +1,84 @@
 ﻿services:
-  tracker-runner:
-    image: fontyssa/tracker-runner-brussels
+  tracker-runner-brussels:
+    image: fontyssa/tracker-runner
     build:
       context: .
       dockerfile: Dockerfile
     networks:
       - docker_rekeningrijden
     environment:
-      - COUNT=100
+      - COUNT=10
       - INTERVAL=3
       - BATCH_SIZE=5
-      - TIME_FACTOR=100
       - STATUS_INTERVAL=120
-      - TARGET_URL=http://router-api/
-      - CAR_URL=http://car-service/
-#      - TARGET_URL="https://router.kind.cluster/"
+      - TIME_FACTOR=1
+      - CAR_URL=
+      - TARGET_URL=
+
+  tracker-runner-nl-to-be:
+    image: fontyssa/tracker-runner
+    networks:
+      - docker_rekeningrijden
+    environment:
+      - COUNT=10
+      - INTERVAL=3
+      - BATCH_SIZE=5
+      - STATUS_INTERVAL=120
+      - TIME_FACTOR=1
+      - CAR_URL=
+      - TARGET_URL=
+      - INTERNATIONAL=true
+      - CC=NL
+      - ROUTES_SOURCE=/pregen/dutch_border_belgium_side
+
+  tracker-runner-be-to-nl:
+    image: fontyssa/tracker-runner
+    networks:
+      - docker_rekeningrijden
+    environment:
+      - COUNT=10
+      - INTERVAL=3
+      - BATCH_SIZE=5
+      - STATUS_INTERVAL=120
+      - TIME_FACTOR=1
+      - CAR_URL=
+      - TARGET_URL=
+      - INTERNATIONAL=true
+      - CC=BE
+      - ROUTES_SOURCE=/pregen/dutch_border_dutch_side
+
+  tracker-runner-lu-to-be:
+    image: fontyssa/tracker-runner
+    networks:
+      - docker_rekeningrijden
+    environment:
+      - COUNT=10
+      - INTERVAL=3
+      - BATCH_SIZE=5
+      - STATUS_INTERVAL=120
+      - TIME_FACTOR=1
+      - CAR_URL=
+      - TARGET_URL=
+      - INTERNATIONAL=true
+      - CC=LU
+      - ROUTES_SOURCE=/pregen/luxembourg_border_belgium_side
+
+  tracker-runner-be-to-lu:
+    image: fontyssa/tracker-runner
+    networks:
+      - docker_rekeningrijden
+    environment:
+      - COUNT=10
+      - INTERVAL=3
+      - BATCH_SIZE=5
+      - STATUS_INTERVAL=120
+      - TIME_FACTOR=1
+      - CAR_URL=
+      - TARGET_URL=
+      - INTERNATIONAL=true
+      - CC=BE
+      - ROUTES_SOURCE=/pregen/luxembourg_border_luxembourg_side
+
 
 networks:
   docker_rekeningrijden:
