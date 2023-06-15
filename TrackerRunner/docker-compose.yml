@@ -4,8 +4,6 @@
     build:
       context: .
       dockerfile: Dockerfile
-    networks:
-      - docker_rekeningrijden
     environment:
       - COUNT=10
       - INTERVAL=3
@@ -17,24 +15,20 @@
 
   tracker-runner-nl-to-be:
     image: fontyssa/tracker-runner
-    networks:
-      - docker_rekeningrijden
     environment:
-      - COUNT=10
+      - COUNT=1
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
       - TIME_FACTOR=1
-      - CAR_URL=
-      - TARGET_URL=
+      - CAR_URL=https://car.oibss.nl/
+      - TARGET_URL=https://international.oibss.nl/
       - INTERNATIONAL=true
       - CC=NL
       - ROUTES_SOURCE=/pregen/dutch_border_belgium_side
 
   tracker-runner-be-to-nl:
     image: fontyssa/tracker-runner
-    networks:
-      - docker_rekeningrijden
     environment:
       - COUNT=10
       - INTERVAL=3
@@ -49,8 +43,6 @@
 
   tracker-runner-lu-to-be:
     image: fontyssa/tracker-runner
-    networks:
-      - docker_rekeningrijden
     environment:
       - COUNT=10
       - INTERVAL=3
@@ -65,8 +57,6 @@
 
   tracker-runner-be-to-lu:
     image: fontyssa/tracker-runner
-    networks:
-      - docker_rekeningrijden
     environment:
       - COUNT=10
       - INTERVAL=3
@@ -78,8 +68,3 @@
       - INTERNATIONAL=true
       - CC=BE
       - ROUTES_SOURCE=/pregen/luxembourg_border_luxembourg_side
-
-
-networks:
-  docker_rekeningrijden:
-    external: true

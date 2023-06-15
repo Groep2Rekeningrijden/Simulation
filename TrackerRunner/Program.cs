@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Json;
+using System.Text;
 using Newtonsoft.Json;
 using TrackerRunner.DTOs;
 using TrackerRunner.International;
@@ -65,7 +66,6 @@ class Program
 
     private static string[] GetFiles()
     {
-        
         var files = Directory.GetFiles(_routesSource);
 
         if (files.Length == 0)
@@ -109,12 +109,14 @@ class Program
         }
 
         if (_international)
-        {  
-            var outVehicle = new Vehicle(vehicle.Id, vehicle.Classification, vehicle.FuelType);
+        {
+            // Console.WriteLine(JsonSerializer.Serialize(vehicle));
+            var outVehicle = new Vehicle(vehicle.Id, vehicle.VehicleClassification, vehicle.FuelType);
             var outPoints = result.Select(coordinatesDto => new Point(coordinatesDto)).ToList();
             var raw = new RawRoute(vehicle: outVehicle, points: outPoints);
-            var json = JsonSerializer.Serialize(raw);
-            await SendRawAsync(httpClient, raw);
+            // var json = JsonSerializer.Serialize(raw);
+            // Console.WriteLine(json);
+            await SendRawAsync(httpClient: httpClient, route: raw);
             return;
         }
 
@@ -153,8 +155,17 @@ class Program
 
     private static async Task SendRawAsync(HttpClient httpClient, RawRoute route)
     {
+        // Console.WriteLine("--------------------------------------");
+        // Console.WriteLine(JsonSerializer.Serialize(route));
         var content = new StringContent(JsonSerializer.Serialize(route), Encoding.UTF8, "application/json");
         var response = await httpClient.PostAsync($"{_targetUrl}submit-raw?cc={_cc}", content);
+        // Console.WriteLine("--------------------------------------");
+        // Console.WriteLine(content);
+        // Console.WriteLine("--------------------------------------");
+        // Console.Write(response);
+        // Console.WriteLine("--------------------------------------");
+        // Console.Write(response.RequestMessage);
+        // Console.WriteLine("--------------------------------------");
         response.EnsureSuccessStatusCode();
     }
 

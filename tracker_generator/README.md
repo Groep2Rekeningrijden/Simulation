@@ -30,7 +30,7 @@ poetry run python tracker_generator/generator.py "Eindhoven, Noord-Brabant, Neth
 For testing OUR international api - Dutch border:
 
 ```shell
-poetry run python tracker_generator/generator.py '{"south": 51.243865, "west": 4.446716, "north": 51.391494, "east": 5.034485}' 10 3 --type BBOX
+poetry run python tracker_generator/generator.py '{"south": 50.760785, "west": 4.174805, "north": 51.532669, "east": 5.894165}' 10 3 --type BBOX
 ```
 
 For testing OUR international api - Luxembourg border:
