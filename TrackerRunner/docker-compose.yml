@@ -5,7 +5,7 @@
       context: .
       dockerfile: Dockerfile
     environment:
-      - COUNT=10
+      - COUNT=100
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
