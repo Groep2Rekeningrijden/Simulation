@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="rawPregen\dutch_border_dutch_side\" />
+    <Folder Include="rawPregen\luxembourg_border_luxembourg_side\" />
+    <Folder Include="RawRoutes\" />
     <Folder Include="Routes\" />
   </ItemGroup>
 

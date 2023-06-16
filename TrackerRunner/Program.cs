@@ -31,7 +31,7 @@ class Program
         var httpClient = new HttpClient();
         var tasks = new List<Task>();
 
-        CreateTasks(files, httpClient, tasks);
+        await CreateTasks(files, httpClient, tasks);
 
         await Task.WhenAll(tasks);
     }
@@ -76,12 +76,15 @@ class Program
         return files;
     }
 
-    private static void CreateTasks(IReadOnlyList<string> files, HttpClient httpClient, ICollection<Task> tasks)
+    private static async Task CreateTasks(IReadOnlyList<string> files, HttpClient httpClient, ICollection<Task> tasks)
     {
+        var vehicles = await GetRandomVehicles(httpClient);
         for (var i = 0; i < _count; i++)
         {
             var file = files[Rnd.Next(files.Count)];
-            var task = Task.Run(async () => { await RunBatch(_batchSize, httpClient, _interval, file); });
+            // var file = files[i];
+            var vehicle = vehicles[i];
+            var task = Task.Run(async () => { await RunBatch(_batchSize, httpClient, _interval, file, vehicle); });
 
             tasks.Add(task);
         }
@@ -94,9 +97,8 @@ class Program
         return coordinates ?? throw new InvalidDataException($"Coordinate file {file} failed to read.");
     }
 
-    private static async Task RunBatch(int batchSize, HttpClient httpClient, int interval, string file)
+    private static async Task RunBatch(int batchSize, HttpClient httpClient, int interval, string file, VehicleDTO vehicle)
     {
-        var vehicle = await GetRandomVehicle(httpClient);
         var coordinates = ReadCoordinatesFromFile(file);
 
         var result = new List<CoordinatesDto>();
@@ -114,8 +116,10 @@ class Program
             var outVehicle = new Vehicle(vehicle.Id, vehicle.VehicleClassification, vehicle.FuelType);
             var outPoints = result.Select(coordinatesDto => new Point(coordinatesDto)).ToList();
             var raw = new RawRoute(vehicle: outVehicle, points: outPoints);
-            // var json = JsonSerializer.Serialize(raw);
-            // Console.WriteLine(json);
+            // Console.WriteLine("Writing to " + file);
+            // await File.WriteAllTextAsync(file.Replace("/pregen", "/rawPregen"),
+            //     JsonSerializer.Serialize(raw));
+            // return;
             await SendRawAsync(httpClient: httpClient, route: raw);
             return;
         }
@@ -140,10 +144,10 @@ class Program
         await SendStatusAsync(httpClient, new StatusDto(id, 1));
     }
 
-    private static async Task<VehicleDTO> GetRandomVehicle(HttpClient httpClient)
+    private static async Task<List<VehicleDTO>> GetRandomVehicles(HttpClient httpClient)
     {
-        var response = await httpClient.GetStringAsync($"{_carUrl}random");
-        return JsonConvert.DeserializeObject<VehicleDTO>(response)!;
+        var response = await httpClient.GetStringAsync($"{_carUrl}get-n?n={_count}");
+        return JsonConvert.DeserializeObject<List<VehicleDTO>>(response)!;
     }
 
     private static async Task SendCoordinatesAsync(HttpClient httpClient, RawInputDto batch)

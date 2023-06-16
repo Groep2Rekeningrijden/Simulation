@@ -9,9 +9,9 @@
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
-      - TIME_FACTOR=1
-      - CAR_URL=
-      - TARGET_URL=
+      - TIME_FACTOR=100
+      - CAR_URL=https://car.oibss.nl/
+      - TARGET_URL=https://tracker.oibss.nl/
 
   tracker-runner-nl-to-be:
     image: fontyssa/tracker-runner
