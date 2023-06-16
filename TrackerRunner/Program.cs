@@ -18,8 +18,8 @@ class Program
     private static int _statusInterval;
     private static readonly Random Rnd = new();
     private static bool _international;
-    private static string _routesSource;
-    private static string _cc;
+    private static string _routesSource = "";
+    private static string _cc = "";
 
 
     static async Task Main(string[] args)
