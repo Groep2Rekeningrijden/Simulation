@@ -1,5 +1,5 @@
 ﻿services:
-  tracker-runner-brussels:
+  runner-0:
     image: fontyssa/tracker-runner
     build:
       context: .
@@ -12,59 +12,55 @@
       - TIME_FACTOR=1
       - CAR_URL=https://car.oibss.nl/
       - TARGET_URL=https://tracker.oibss.nl/
-
-  tracker-runner-nl-to-be:
+  runner-1:
     image: fontyssa/tracker-runner
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      - COUNT=1
+      - COUNT=500
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
       - TIME_FACTOR=1
       - CAR_URL=https://car.oibss.nl/
-      - TARGET_URL=https://international.oibss.nl/
-      - INTERNATIONAL=true
-      - CC=NL
-      - ROUTES_SOURCE=/pregen/dutch_border_belgium_side
-
-  tracker-runner-be-to-nl:
+      - TARGET_URL=https://tracker.oibss.nl/
+  runner-2:
     image: fontyssa/tracker-runner
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      - COUNT=10
+      - COUNT=500
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
       - TIME_FACTOR=1
-      - CAR_URL=
-      - TARGET_URL=
-      - INTERNATIONAL=true
-      - CC=BE
-      - ROUTES_SOURCE=/pregen/dutch_border_dutch_side
-
-  tracker-runner-lu-to-be:
+      - CAR_URL=https://car.oibss.nl/
+      - TARGET_URL=https://tracker.oibss.nl/
+  runner-3:
     image: fontyssa/tracker-runner
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      - COUNT=10
+      - COUNT=500
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
       - TIME_FACTOR=1
-      - CAR_URL=
-      - TARGET_URL=
-      - INTERNATIONAL=true
-      - CC=LU
-      - ROUTES_SOURCE=/pregen/luxembourg_border_belgium_side
-
-  tracker-runner-be-to-lu:
+      - CAR_URL=https://car.oibss.nl/
+      - TARGET_URL=https://tracker.oibss.nl/
+  runner-4:
     image: fontyssa/tracker-runner
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      - COUNT=10
+      - COUNT=500
       - INTERVAL=3
       - BATCH_SIZE=5
       - STATUS_INTERVAL=120
       - TIME_FACTOR=1
-      - CAR_URL=
-      - TARGET_URL=
-      - INTERNATIONAL=true
-      - CC=BE
-      - ROUTES_SOURCE=/pregen/luxembourg_border_luxembourg_side
+      - CAR_URL=https://car.oibss.nl/
+      - TARGET_URL=https://tracker.oibss.nl/
