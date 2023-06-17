@@ -140,6 +140,9 @@ class Program
             ticksSinceStatus++;
         }
 
+        // Small wait so the coordinate service is likely to have processed the coordinates.
+        await Task.Delay(3000);
+
         await SendStatusAsync(httpClient, new StatusDto(id, 1));
     }
 
