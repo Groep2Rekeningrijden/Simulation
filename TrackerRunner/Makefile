@@ -1,4 +1,4 @@
-PHASE_TIME=180
+PHASE_TIME=2
 
 run0:
 	docker compose -f docker-compose-async-runner.yml up runner-0
